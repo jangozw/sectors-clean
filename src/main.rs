@@ -1,8 +1,9 @@
-mod cfg;
 mod cli;
+
 use cli::{CLI};
 use clap::Parser;
 fn main() {
+
     let app = CLI::parse();
     let res = app.start();
     match res {
@@ -13,4 +14,7 @@ fn main() {
             println!("process exit with err: {:?}", e)
         }
     }
+
+
+
 }
