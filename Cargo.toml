@@ -1,0 +1,32 @@
+[package]
+name = "sector_clean"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# [lib]
+# path = "lib.rs"
+
+[[bin]]
+name = "lotus-sector-clean"
+path = "src/main.rs"
+
+[dependencies]
+serde = "*"
+serde_derive = "*"
+serde_json = "*"
+rocksdb = "0.19.0"
+
+[dependencies.clap]
+version = "3.2"
+features = [ "derive" ]
+
+[dependencies.anyhow]
+version = "1"
+
+[dependencies.tracing]
+version = "0.1"
+
+[dependencies.tracing-subscriber]
+version = "0.3"
+features = [ "env-filter", "parking_lot" ]
