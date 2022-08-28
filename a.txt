@@ -1,0 +1,14 @@
+load tipset cost: 3.177576ms
+StateMinerActiveSectors cost: 316.428474ms
+StateMinerSectors cost: 1.952006844s
+sort all sectors cost: 5.350952ms
+calc expired cost: 4.525ms
+miner: f089380 
+sector size: 32GiB 
+now height: 2103484
+total sectors: 60724 power: 1.8531p
+active sectors: 8371 power: 0.2555p
+expired sectors: 49948 power: 1.5243P begin epoch:0
+expired max expiration sector: 78392 , expiation: 2100116
+before output cost: 2.281666128s
+------------------------

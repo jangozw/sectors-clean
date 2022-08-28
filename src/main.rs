@@ -1,20 +1,18 @@
+use clap::Parser;
+
+use cli::CLI;
+
 mod cli;
 
-use cli::{CLI};
-use clap::Parser;
 fn main() {
-
     let app = CLI::parse();
     let res = app.start();
     match res {
-        Ok(_) =>{
+        Ok(_) => {
             // println!("process exit with output: {:?}", value)
         }
-        Err(e) =>{
+        Err(e) => {
             println!("process exit with err: {:?}", e)
         }
     }
-
-
-
 }

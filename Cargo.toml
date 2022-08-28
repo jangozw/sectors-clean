@@ -7,11 +7,13 @@ edition = "2021"
 members = ["util"]
 
 [dependencies]
-util={path="util"}
+util = { path = "util" }
+chrono = "0.4.22"
+regex = "1"
 
 [dependencies.clap]
 version = "3.2"
-features = [ "derive" ]
+features = ["derive"]
 
 [dependencies.anyhow]
 version = "1"
@@ -21,4 +23,7 @@ version = "0.1"
 
 [dependencies.tracing-subscriber]
 version = "0.3"
-features = [ "env-filter", "parking_lot" ]
+features = ["env-filter", "parking_lot"]
+
+[dependencies.dirs]
+version = "4.0"
