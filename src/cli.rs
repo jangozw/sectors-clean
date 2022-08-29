@@ -113,7 +113,7 @@ impl Export {
             let export_file = format!("{}/{}_{}_expire_{}_{}.txt", export_dir.to_str().unwrap(), m.city, m.bucket, begin_height, now_height);
             let job = format!("lotus state sectors-exp --stat=true --epoch_begin={} --prefix=0 {} > {}",
                               begin_height, m.miner, export_file);
-            println!("doing: {}", job);
+            println!("doing {}: {}", m.miner, job);
             // let output = std::process::Command::new("sh").arg("-c").arg("ls -G -alF > a.txt").output().expect("sh exec error!");
             let output = std::process::Command::new("sh").arg("-c").arg(job).output().expect("cmd exec err");
             let _ = String::from_utf8(output.stdout).expect("output from_utf8 failed");
@@ -126,6 +126,13 @@ impl Export {
                 total_exp += exp_power;
                 util::store::set_miner_export_height(&m.miner, now_height as u64).expect("update export height failed");
                 println!("done! {} exp power: {}P,  updated new height: {} cost: {:?}", m.miner, exp_power, now_height, start.elapsed());
+                if exp_power > 0.0{
+                    let arg = format!("sed -i '1,14d' {}", export_file);
+                    std::process::Command::new("sh").arg("-c").arg(arg).output().expect("do 1,14d exec err");
+                } else if exp_power == 0.0 {
+                    let arg = format!("rm -rf {}", export_file);
+                    std::process::Command::new("sh").arg("-c").arg(arg).output().expect("remove file exec err");
+                }
             } else {
                 println!("error for exec");
             }
