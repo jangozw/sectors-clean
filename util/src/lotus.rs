@@ -30,6 +30,9 @@ pub fn mainnet_timestamp_to_height(stamp: i64) -> i64 {
 }
 
 pub fn mainnet_height_to_datetime(height: i64) -> String {
+    if height == 0 {
+        return " ".to_string();
+    }
     let stamp = (height - MAIN_NET_HEIGHT) * 30 + MAIN_NET_TIMESTAMP;
     // Creates a new SystemTime from the specified number of whole seconds
     let d = UNIX_EPOCH + Duration::from_secs(stamp as u64);

@@ -12,3 +12,8 @@ expired sectors: 49948 power: 1.5243P begin epoch:0
 expired max expiration sector: 78392 , expiation: 2100116
 before output cost: 2.281666128s
 ------------------------
+
+
+2103458
+
+

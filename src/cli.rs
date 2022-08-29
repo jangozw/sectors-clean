@@ -7,6 +7,8 @@ use tracing::*;
 use regex::Regex;
 use util::cfg::get_cfg_miners;
 use std::time::{ Instant};
+use std::collections::{HashMap};
+
 
 #[derive(Debug, Parser)]
 #[clap(name = "lotus-sector-clean", author = "The Aleo Team <hello@aleo.org>")]
@@ -151,13 +153,17 @@ impl MinerInfo {
         println!("------------------------setting-info--------------------------------");
         println!("export dir: {:?}", get_export_dir());
         println!("store dir: {:?}", util::store::get_db_dir());
-
         println!("-------------------------miner info---------------------------------");
-
         let list = get_cfg_miners().expect("get cfg miners err");
         for m in list.iter(){
+            print!("{},", m.miner);
+        }
+        println!("\n");
+        println!("{:<10} {:<10} {:<10} {:<12} {:<20}", "miner", "city", "bucket", "exportHeight", "exportTime");
+        for m in list.iter(){
             let height = util::store::get_miner_export_height(&m.miner).expect("get height failed");
-            println!("{} city: {} bucket: {} last_export_at: {}", m.miner, m.city, m.bucket, height);
+            let export_time = util::lotus::mainnet_height_to_datetime(height as i64);
+            println!("{:<10} {:<10} {:<10} {:<12} {:<20}", m.miner, m.city, m.bucket, height, export_time);
         }
         Ok("".to_string())
     }
@@ -193,15 +199,30 @@ pub struct Update {
 
 impl Update {
     pub fn parse(self) -> Result<String> {
-        let res = util::store::set_miner_export_height(&self.miner, self.height);
-        match res {
-            Ok(_) => {}
-            Err(e) => {
-                bail!("set_miner_export_height failed! {}", e.into_string())
+        let cfg_miners = get_cfg_miners().unwrap();
+        let mut  mp = HashMap::new();
+        for m in &cfg_miners {
+            mp.insert(m.miner.clone(), "");
+        }
+        let arg_miners: Vec<String> = self.miner.split(",").map(|s| s.to_string()).collect();
+        for mid in &arg_miners {
+            if ! mp.contains_key(mid) {
+                error!("miner {} not exists in cfg", mid);
+                bail!("miner {} not exists in cfg", mid);
             }
         }
-        let height = util::store::get_miner_export_height(&self.miner).unwrap();
-        Ok(format!("Ok! {} new height: {}", self.miner, height))
+        for mid in &arg_miners {
+            let res = util::store::set_miner_export_height(mid, self.height);
+            match res {
+                Ok(_) => {}
+                Err(e) => {
+                    bail!("set_miner_export_height failed! {}", e.into_string())
+                }
+            }
+            let height = util::store::get_miner_export_height(mid).unwrap();
+            println!("update ok! {} now height: {}", mid, height);
+        }
+        Ok("".to_string())
     }
 }
 
