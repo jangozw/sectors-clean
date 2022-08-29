@@ -6,16 +6,11 @@ use dirs::home_dir;
 use tracing::*;
 use regex::Regex;
 use util::cfg::get_cfg_miners;
+use std::time::{ Instant};
 
 #[derive(Debug, Parser)]
 #[clap(name = "lotus-sector-clean", author = "The Aleo Team <hello@aleo.org>")]
 pub struct CLI {
-    #[clap(default_value = "root", long = "username")]
-    pub username: String,
-
-    #[clap(default_value = "1", long = "network")]
-    pub network: u16,
-
     /// Specify an optional subcommand.
     #[clap(subcommand)]
     commands: Option<Command>,
@@ -31,13 +26,16 @@ impl CLI {
                 println!("{}", command.parse()?);
                 Ok(())
             }
-            None => match self.network {
+     /*       None => match self.network {
                 1 => {
                     info!("start without subcommand,  network is {}", self.network);
                     Ok(())
                 }
                 _ => bail!("invalid network"),
-            },
+            },*/
+            _ => {
+                Ok(())
+            }
         }
     }
 }
@@ -109,10 +107,11 @@ impl Export {
         util::file::check_create_path(export_dir.clone());
         let now_height = util::lotus::mainnet_height_now();
         let mut total_exp :f64 = 0.0;
+        let start = Instant::now();
         for m in &export_miners {
             let begin_height = util::store::get_miner_export_height(&m.miner).expect("get height failed");
             let export_file = format!("{}/{}_{}_expire_{}_{}.txt", export_dir.to_str().unwrap(), m.city, m.bucket, begin_height, now_height);
-            let job = format!("lotus state sectors-exp --stat=true --epoch_begin={} --prefix=0 {} > {}> ",
+            let job = format!("lotus state sectors-exp --stat=true --epoch_begin={} --prefix=0 {} > {}",
                               begin_height, m.miner, export_file);
             println!("doing: {}", job);
             // let output = std::process::Command::new("sh").arg("-c").arg("ls -G -alF > a.txt").output().expect("sh exec error!");
@@ -126,10 +125,12 @@ impl Export {
             if ok {
                 total_exp += exp_power;
                 util::store::set_miner_export_height(&m.miner, now_height as u64).expect("update export height failed");
-                println!("done! {} exp power: {}P,  updated new height: {}", m.miner, exp_power, now_height);
+                println!("done! {} exp power: {}P,  updated new height: {} cost: {:?}", m.miner, exp_power, now_height, start.elapsed());
+            } else {
+                println!("error for exec");
             }
         }
-        println!("total exp power: {}P", total_exp);
+        println!("total exp-power: {}P cost: {:?}", total_exp, start.elapsed());
         Ok("".to_string())
     }
 }
