@@ -47,7 +47,7 @@ impl CLI {
 pub enum Command {
     #[clap(name = "export", about = "Export expired data")]
     Export(Export),
-    #[clap(name = "stat", hide = false, about = "Show stat expired sectors info")]
+    #[clap(name = "stat", hide = true, about = "Show stat expired sectors info")]
     Stat(Stat),
     #[clap(name = "miner-info", about = "Show miners")]
     MinerInfo(MinerInfo),
@@ -140,6 +140,12 @@ pub struct MinerInfo {}
 
 impl MinerInfo {
     pub fn parse(self) -> Result<String> {
+        println!("------------------------setting-info--------------------------------");
+        println!("export dir: {:?}", get_export_dir());
+        println!("store dir: {:?}", util::store::get_db_dir());
+
+        println!("-------------------------miner info---------------------------------");
+
         let list = get_cfg_miners().expect("get cfg miners err");
         for m in list.iter(){
             let height = util::store::get_miner_export_height(&m.miner).expect("get height failed");

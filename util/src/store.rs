@@ -6,7 +6,7 @@ use rocksdb::DB;
 // use anyhow::{Result, bail};
 const DB_NAME: &str = ".lotus-sector-clean-db1";
 
-fn get_db_dir() -> PathBuf {
+pub fn get_db_dir() -> PathBuf {
     let mut path = home_dir().expect("couldn't get home dir in your system!");
     path.push(DB_NAME);
     path
