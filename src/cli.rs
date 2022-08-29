@@ -1,12 +1,10 @@
 use std::path::PathBuf;
 use anyhow::{bail, Result};
 use chrono::prelude::*;
-use clap::builder::TypedValueParser;
 use clap::Parser;
 use dirs::home_dir;
 use tracing::*;
 use regex::Regex;
-use tracing_subscriber::fmt::format;
 use util::cfg::get_cfg_miners;
 
 #[derive(Debug, Parser)]
@@ -49,7 +47,7 @@ impl CLI {
 pub enum Command {
     #[clap(name = "export", about = "Export expired data")]
     Export(Export),
-    #[clap(name = "stat", about = "Show stat expired sectors info")]
+    #[clap(name = "stat", hide = false, about = "Show stat expired sectors info")]
     Stat(Stat),
     #[clap(name = "miner-info", about = "Show miners")]
     MinerInfo(MinerInfo),
@@ -131,6 +129,7 @@ impl Export {
                 println!("done! {} exp power: {}P,  updated new height: {}", m.miner, exp_power, now_height);
             }
         }
+        println!("total exp power: {}P", total_exp);
         Ok("".to_string())
     }
 }
