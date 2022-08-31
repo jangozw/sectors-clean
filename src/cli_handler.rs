@@ -59,9 +59,10 @@ impl CLIHandler {
             bail!("invalid args, miner or all arg must be specified");
         }
         let mut export_miners = Vec::new();
-
         let cfg_miners = util::cfg::get_cfg_miners()?;
-
+        if miner.is_none() && all == false {
+            return Err(anyhow::Error::msg("arg miner or all can not both empty"));
+        }
         if let Some(miners) = miner {
             let miners: Vec<String> = miners.split(",").map(|s| s.to_string()).collect();
             for mid in miners {
