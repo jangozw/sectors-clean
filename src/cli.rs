@@ -11,7 +11,7 @@ use tracing::*;
 use util::cfg::get_cfg_miners;
 
 #[derive(Debug, Parser)]
-#[clap(name = "lotus-sector-clean", author = "The Aleo Team <hello@aleo.org>")]
+#[clap(name = "lotus-sector-clean", author = "Django")]
 pub struct CLI {
     /// Specify an optional subcommand.
     #[clap(subcommand)]
