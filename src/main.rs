@@ -5,6 +5,7 @@ mod cli;
 mod cli_handler;
 
 fn main() {
+    // set log level and will print the output
     util::initialize_logger(3);
     let app = CLI::parse();
     match app.start() {
