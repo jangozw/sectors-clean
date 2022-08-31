@@ -376,6 +376,7 @@ dependencies = [
  "clap",
  "dirs",
  "regex",
+ "rocksdb",
  "tracing",
  "tracing-subscriber",
  "util",

@@ -2,6 +2,7 @@ use clap::Parser;
 use cli::CLI;
 use tracing::*;
 mod cli;
+mod cli_handler;
 
 fn main() {
     util::initialize_logger(3);

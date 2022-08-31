@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::{Error, Result};
-use rocksdb::DB;
+use rocksdb::{DB, DBWithThreadMode, SingleThreaded};
 
-// use anyhow::{Result, bail};
 const DB_NAME: &str = ".lotus-sector-clean-db1";
 
 pub fn get_db_dir() -> Result<PathBuf> {
@@ -14,6 +13,32 @@ pub fn get_db_dir() -> Result<PathBuf> {
     // Err(anyhow::anyhow!("wrong {}", 1))
     Err(Error::msg("could not get home dir"))
 }
+
+pub fn init_db() -> Result<DBWithThreadMode<SingleThreaded>> {
+    let db = DB::open_default(get_db_dir()?)?;
+    Ok(db)
+}
+
+pub fn set_miner_export_height(db: &DBWithThreadMode<SingleThreaded>, miner: &str, height: u64) -> Result<()> {
+    let key = format!("miner_export_height_{}", miner);
+    db.put(key, height.to_string())?;
+    Ok(())
+}
+
+pub fn get_miner_export_height(db: &DBWithThreadMode<SingleThreaded>, miner: &str) -> Result<u64> {
+    let key = format!("miner_export_height_{}", miner);
+    let height = db.get(key)?;
+    let height: u64 = match height {
+        None => { 0 }
+        Some(value) => {
+            let value = String::from_utf8(value)?;
+            let height: u64 = str::parse::<u64>(&*value)?;
+            height
+        }
+    };
+    Ok(height)
+}
+
 
 /*pub fn test_db() {
     // NB: db is automatically closed at end of lifetime
@@ -31,33 +56,3 @@ pub fn get_db_dir() -> Result<PathBuf> {
     // let _ = DB::destroy(&Options::default(), path);
 }
 */
-
-pub fn set_miner_export_height(miner: &str, height: u64) -> Result<()> {
-    let db = DB::open_default(get_db_dir()?)?;
-    let key = format!("miner_export_height_{}", miner);
-    db.put(key, height.to_string())?;
-    Ok(())
-}
-
-pub fn get_miner_export_height(miner: &str) -> Result<u64> {
-    let db = DB::open_default(get_db_dir()?)?;
-    let key = format!("miner_export_height_{}", miner);
-    let height = db.get(key)?;
-    let height: u64 = match height {
-        None => { 0 }
-        Some(value) => {
-            let value = String::from_utf8(value)?;
-            let height: u64 = str::parse::<u64>(&*value)?;
-            height
-        }
-    };
-    Ok(height)
-}
-
-
-#[test]
-fn test_set_height() {
-    set_miner_export_height("f0100", 145).expect("set height ok");
-    let height = get_miner_export_height("f0100").expect("get height error");
-    println!("get Height: {}", height);
-}
