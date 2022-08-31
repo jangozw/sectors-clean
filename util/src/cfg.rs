@@ -1,6 +1,5 @@
-use std::fmt::Error;
 use std::fs::File;
-
+use anyhow::{Result};
 use serde_derive::{Deserialize, Serialize};
 
 const MINER_JSON: &str = "miners.json";
@@ -12,9 +11,9 @@ pub struct Miner {
     pub bucket: String,
 }
 
-pub fn get_cfg_miners() -> Result<Vec<Miner>, Error> {
-    let f = File::open(MINER_JSON).expect("open miners.json failed");
-    let miners: Vec<Miner> = serde_json::from_reader(f).expect("read json file err");
+pub fn get_cfg_miners() -> Result<Vec<Miner>> {
+    let f = File::open(MINER_JSON)?;
+    let miners: Vec<Miner> = serde_json::from_reader(f)?;
     Ok(miners)
 }
 

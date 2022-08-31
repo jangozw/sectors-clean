@@ -150,6 +150,12 @@ pub struct MinerInfo {}
 
 impl MinerInfo {
     pub fn parse(self) -> Result<String> {
+        info!("test info output");
+        error!("test error output");
+        debug!("test debug output");
+        trace!("test trace output");
+
+
         println!("------------------------setting-info--------------------------------");
         println!("export dir: {:?}", get_export_dir());
         println!("store dir: {:?}", util::store::get_db_dir());
