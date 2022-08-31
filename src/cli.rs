@@ -1,14 +1,14 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Instant;
+
 use anyhow::{bail, Result};
 use chrono::prelude::*;
 use clap::Parser;
-use dirs::home_dir;
-use tracing::*;
 use regex::Regex;
-use util::cfg::get_cfg_miners;
-use std::time::{ Instant};
-use std::collections::{HashMap};
+use tracing::*;
 
+use util::cfg::get_cfg_miners;
 
 #[derive(Debug, Parser)]
 #[clap(name = "lotus-sector-clean", author = "The Aleo Team <hello@aleo.org>")]
@@ -28,13 +28,6 @@ impl CLI {
                 println!("{}", command.parse()?);
                 Ok(())
             }
-     /*       None => match self.network {
-                1 => {
-                    info!("start without subcommand,  network is {}", self.network);
-                    Ok(())
-                }
-                _ => bail!("invalid network"),
-            },*/
             _ => {
                 Ok(())
             }
@@ -82,12 +75,12 @@ impl Export {
             bail!("invalid args, miner or all arg must be specified");
         }
         let mut export_miners = Vec::new();
-        let cfg_miners = match util::cfg::get_cfg_miners() {
-            Ok(v) => { v }
-            Err(e) => { bail!(e.to_string()) }
-        };
-        if self.miner.is_some() {
-            let miners = self.miner.unwrap();
+
+        let cfg_miners = util::cfg::get_cfg_miners()?;
+
+        // if self.miner.is_some() {
+        if let Some(miners) = self.miner {
+            // let miners = self.miner.unwrap();
             let miners: Vec<String> = miners.split(",").map(|s| s.to_string()).collect();
             for mid in miners {
                 let mut has = false;
@@ -105,41 +98,41 @@ impl Export {
         } else if self.all == true {
             export_miners = cfg_miners;
         }
-        let export_dir = get_export_dir();
+        let export_dir = get_export_dir()?;
         util::file::check_create_path(export_dir.clone());
         let now_height = util::lotus::mainnet_height_now();
         let mut total_exp :f64 = 0.0;
         let start = Instant::now();
         for m in &export_miners {
-            let begin_height = util::store::get_miner_export_height(&m.miner).expect("get height failed");
+            let begin_height = util::store::get_miner_export_height(&m.miner)?;
             let export_file = format!("{}/{}_{}_expire_{}_{}.txt", export_dir.to_str().unwrap(), m.city, m.bucket, begin_height, now_height);
             let job = format!("lotus state sectors-exp --stat=true --epoch_begin={} --prefix=0 {} > {}",
                               begin_height, m.miner, export_file);
-            println!("doing {}: {}", m.miner, job);
+            info!("doing {}: {}", m.miner, job);
             // let output = std::process::Command::new("sh").arg("-c").arg("ls -G -alF > a.txt").output().expect("sh exec error!");
-            let output = std::process::Command::new("sh").arg("-c").arg(job).output().expect("cmd exec err");
-            let _ = String::from_utf8(output.stdout).expect("output from_utf8 failed");
+            let output = std::process::Command::new("sh").arg("-c").arg(job).output()?;
+            let _ = String::from_utf8(output.stdout)?;
             // check
             let ck_arg = format!("head -n 14 {}", export_file);
-            let ck_output = std::process::Command::new("sh").arg("-c").arg(ck_arg).output().expect("ck cmd exec err");
-            let ck_output = String::from_utf8(ck_output.stdout).expect("ck_output from_utf8 failed");
-            let (ok, exp_power) = match_exp_power(&ck_output);
+            let ck_output = std::process::Command::new("sh").arg("-c").arg(ck_arg).output()?;
+            let ck_output = String::from_utf8(ck_output.stdout)?;
+            let (ok, exp_power) = match_exp_power(&ck_output)?;
             if ok {
                 total_exp += exp_power;
-                util::store::set_miner_export_height(&m.miner, now_height as u64).expect("update export height failed");
-                println!("done! {} exp power: {}P,  updated new height: {} cost: {:?}", m.miner, exp_power, now_height, start.elapsed());
-                if exp_power > 0.0{
+                util::store::set_miner_export_height(&m.miner, now_height as u64)?;
+                info!("done! {} exp power: {}P,  updated new height: {} cost: {:?}", m.miner, exp_power, now_height, start.elapsed());
+                if exp_power > 0.0 {
                     let arg = format!("sed -i '1,14d' {}", export_file);
-                    std::process::Command::new("sh").arg("-c").arg(arg).output().expect("do 1,14d exec err");
+                    std::process::Command::new("sh").arg("-c").arg(arg).output()?;
                 } else if exp_power == 0.0 {
                     let arg = format!("rm -rf {}", export_file);
-                    std::process::Command::new("sh").arg("-c").arg(arg).output().expect("remove file exec err");
+                    std::process::Command::new("sh").arg("-c").arg(arg).output()?;
                 }
             } else {
-                println!("error for exec");
+                error!("error for exec");
             }
         }
-        println!("total exp-power: {}P cost: {:?}", total_exp, start.elapsed());
+        info!("total exp-power: {}P cost: {:?}", total_exp, start.elapsed());
         Ok("".to_string())
     }
 }
@@ -150,12 +143,6 @@ pub struct MinerInfo {}
 
 impl MinerInfo {
     pub fn parse(self) -> Result<String> {
-        info!("test info output");
-        error!("test error output");
-        debug!("test debug output");
-        trace!("test trace output");
-
-
         println!("------------------------setting-info--------------------------------");
         println!("export dir: {:?}", get_export_dir());
         println!("store dir: {:?}", util::store::get_db_dir());
@@ -187,10 +174,7 @@ pub struct Stat {
 
 impl Stat {
     pub fn parse(self) -> Result<String> {
-        info!("start command Stat,  city: {:?} miner: {:?}", self.city, self.miner);
-
-
-
+        debug!("start command Stat,  city: {:?} miner: {:?}", self.city, self.miner);
         Ok("".to_string())
     }
 }
@@ -205,28 +189,21 @@ pub struct Update {
 
 impl Update {
     pub fn parse(self) -> Result<String> {
-        let cfg_miners = get_cfg_miners().unwrap();
-        let mut  mp = HashMap::new();
+        let cfg_miners = get_cfg_miners()?;
+        let mut mp = HashMap::new();
         for m in &cfg_miners {
             mp.insert(m.miner.clone(), "");
         }
         let arg_miners: Vec<String> = self.miner.split(",").map(|s| s.to_string()).collect();
         for mid in &arg_miners {
             if ! mp.contains_key(mid) {
-                error!("miner {} not exists in cfg", mid);
                 bail!("miner {} not exists in cfg", mid);
             }
         }
         for mid in &arg_miners {
-            let res = util::store::set_miner_export_height(mid, self.height);
-            match res {
-                Ok(_) => {}
-                Err(e) => {
-                    bail!("set_miner_export_height failed! {}", e.into_string())
-                }
-            }
-            let height = util::store::get_miner_export_height(mid).unwrap();
-            println!("update ok! {} now height: {}", mid, height);
+            let _ = util::store::set_miner_export_height(mid, self.height)?;
+            let height = util::store::get_miner_export_height(mid)?;
+            info!("update export height ok! {} now height: {}", mid, height);
         }
         Ok("".to_string())
     }
@@ -234,30 +211,33 @@ impl Update {
 
 
 //################################################
-fn get_export_dir() -> PathBuf {
-    let mut path = home_dir().expect("couldn't get home dir in your system!");
-    path.push("expired_sectors");
-    let now = Local::now();
-    let name = format!("{}{}{}", now.year(), now.month(), now.day());
-    path.push(name);
-    path
+fn get_export_dir() -> Result<PathBuf> {
+    if let Some(mut path) = dirs::home_dir() {
+        path.push("expired_sectors");
+        let now = Local::now();
+        let name = format!("{}{}{}", now.year(), now.month(), now.day());
+        path.push(name);
+        return Ok(path);
+    }
+    Err(anyhow::Error::msg("could not get export dir"))
 }
 
-fn match_exp_power(text: &str)->(bool, f64){
+fn match_exp_power(text: &str) -> Result<(bool, f64)> {
     let reg = Regex::new(r"expired sectors: \d+ power: (\d+\.\d+)P").unwrap();
-    let mut power :Option<String> = None;
-    let mut ok : bool = false;
-    for cap in reg.captures_iter(text){
+    let mut power: Option<String> = None;
+    let mut ok: bool = false;
+    for cap in reg.captures_iter(text) {
         let a = cap.get(1).unwrap().as_str();
         ok = true;
         power = Some(a.to_string());
+        break;
     }
-    let mut exp_power :f64 = 0.0;
-    if power.is_some(){
-        let a = power.unwrap();
-        exp_power = a.parse::<f64>().unwrap();
+    if power.is_none() {
+        return Err(anyhow::Error::msg("could not get exp power by output"));
     }
-    (ok, exp_power)
+    let power = power.unwrap();
+    let exp_power: f64 = power.parse::<f64>().unwrap();
+    Ok((ok, exp_power))
 }
 
 #[test]
@@ -276,8 +256,10 @@ expired sectors: 49948 power: 1.5243P begin epoch:0
 expired max expiration sector: 78392 , expiation: 2100116
 before output cost: 2.281666128s";
 
-    let (ok, power) = match_exp_power(str);
-
-    println!("power is: {} ok: {}",power, ok);
-
+    match match_exp_power(str) {
+        Ok((ok, power)) => {
+            println!("ok: {} power: {}", ok, power);
+        }
+        Err(e) => { println!("error: {}", e) }
+    }
 }

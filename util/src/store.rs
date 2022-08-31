@@ -1,18 +1,21 @@
 use std::path::PathBuf;
 
-use dirs::home_dir;
+use anyhow::{Error, Result};
 use rocksdb::DB;
 
 // use anyhow::{Result, bail};
 const DB_NAME: &str = ".lotus-sector-clean-db1";
 
-pub fn get_db_dir() -> PathBuf {
-    let mut path = home_dir().expect("couldn't get home dir in your system!");
-    path.push(DB_NAME);
-    path
+pub fn get_db_dir() -> Result<PathBuf> {
+    if let Some(mut path) = dirs::home_dir() {
+        path.push(DB_NAME);
+        return Ok(path);
+    }
+    // Err(anyhow::anyhow!("wrong {}", 1))
+    Err(Error::msg("could not get home dir"))
 }
 
-pub fn test_db() {
+/*pub fn test_db() {
     // NB: db is automatically closed at end of lifetime
     let path = get_db_dir();
     let db = DB::open_default(path).expect("open db failed");
@@ -27,23 +30,24 @@ pub fn test_db() {
 
     // let _ = DB::destroy(&Options::default(), path);
 }
+*/
 
-
-pub fn set_miner_export_height(miner: &str, height: u64) -> Result<(), rocksdb::Error> {
-    let db = DB::open_default(get_db_dir())?;
+pub fn set_miner_export_height(miner: &str, height: u64) -> Result<()> {
+    let db = DB::open_default(get_db_dir()?)?;
     let key = format!("miner_export_height_{}", miner);
-    db.put(key, height.to_string())
+    db.put(key, height.to_string())?;
+    Ok(())
 }
 
-pub fn get_miner_export_height(miner: &str) -> Result<u64, rocksdb::Error> {
-    let db = DB::open_default(get_db_dir())?;
+pub fn get_miner_export_height(miner: &str) -> Result<u64> {
+    let db = DB::open_default(get_db_dir()?)?;
     let key = format!("miner_export_height_{}", miner);
-    let height = db.get(key).expect("db get key failed");
+    let height = db.get(key)?;
     let height: u64 = match height {
         None => { 0 }
         Some(value) => {
-            let value = String::from_utf8(value).expect("to string err");
-            let height: u64 = str::parse::<u64>(&*value).expect("failed");
+            let value = String::from_utf8(value)?;
+            let height: u64 = str::parse::<u64>(&*value)?;
             height
         }
     };

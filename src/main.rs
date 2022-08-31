@@ -1,18 +1,17 @@
 use clap::Parser;
-
 use cli::CLI;
-
+use tracing::*;
 mod cli;
 
 fn main() {
+    util::initialize_logger(3);
     let app = CLI::parse();
-    let res = app.start();
-    match res {
+    match app.start() {
         Ok(_) => {
-            // println!("process exit with output: {:?}", value)
+            // info!("process end")
         }
         Err(e) => {
-            println!("process exit with err: {:?}", e)
+            error!("process exit with err: {:?}", e)
         }
     }
 }
