@@ -54,6 +54,8 @@ impl Command {
 pub struct Export {
     #[clap(long = "miner")]
     pub miner: Option<String>,
+    #[clap(long = "city")]
+    pub city: Option<String>,
     #[clap(long = "all")]
     pub all: bool,
 }
@@ -61,7 +63,7 @@ pub struct Export {
 impl Export {
     pub fn parse(self) -> Result<String> {
         let handler = CLIHandler::new();
-        handler.export(self.miner, self.all)
+        handler.export(self.miner,self.city, self.all)
     }
 }
 

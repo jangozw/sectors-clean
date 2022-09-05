@@ -54,15 +54,12 @@ impl CLIHandler {
         }
         Ok("".to_string())
     }
-    pub fn export(self, miner: Option<String>, all: bool) -> Result<String> {
-        if all == false && miner.is_none() {
-            bail!("invalid args, miner or all arg must be specified");
+    pub fn export(self, miner: Option<String>, city :Option<String>,all: bool) -> Result<String> {
+        if miner.is_none() && all == false && city .is_none(){
+            return Err(anyhow::Error::msg("arg miner or all can not both empty"));
         }
         let mut export_miners = Vec::new();
         let cfg_miners = util::cfg::get_cfg_miners()?;
-        if miner.is_none() && all == false {
-            return Err(anyhow::Error::msg("arg miner or all can not both empty"));
-        }
         if let Some(miners) = miner {
             let miners: Vec<String> = miners.split(",").map(|s| s.to_string()).collect();
             for mid in miners {
@@ -78,9 +75,31 @@ impl CLIHandler {
                     bail!("arg miner {} not in cfg miners", mid);
                 }
             }
-        } else if all == true {
+        } else if let Some(cities) = city {
+            let cities: Vec<String> = cities.split(",").map(|s| {
+                s.to_string().to_ascii_lowercase()
+            }).collect();
+            for name in cities {
+                for cm in &cfg_miners {
+                    if name == cm.city.to_ascii_lowercase(){
+                        export_miners.push(cm.clone());
+                    }
+                }
+            }
+        }
+        else if all == true {
             export_miners = cfg_miners;
         }
+        if export_miners.len() == 0  {
+            bail!("get export miners is 0");
+        } else {
+            print!("export: ");
+            for cm in &export_miners {
+                print!("{} ", cm.miner);
+            }
+            println!(" ");
+        }
+
         let export_dir = get_export_dir()?;
         util::file::check_create_path(export_dir.clone());
         let now_height = util::lotus::mainnet_height_now();
